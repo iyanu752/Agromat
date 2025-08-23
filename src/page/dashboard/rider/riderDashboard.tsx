@@ -199,6 +199,7 @@ const getOrders = async () => {
 
   useEffect(() => {
     getOrders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -235,6 +236,7 @@ socket.on("orderPlaced", (data: any) => {
       socket.off("orderPlaced");
       socket.off("orderStatusUpdate");
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logout = async () => {
@@ -305,6 +307,7 @@ const getOrdersHistory = async () => {
 
   useEffect(() => {
     getOrdersHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyDelivery = async (orderId: string, code: string) => {
