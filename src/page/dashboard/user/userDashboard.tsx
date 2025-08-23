@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Clock, LogOut, Search, ShoppingCart, User, Package } from "lucide-react"
+import { Clock, LogOut, Search, ShoppingCart, User, Package, Leaf } from "lucide-react"
 import { socket } from "@/utils/socket";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -187,8 +187,12 @@ interface UserOrder {
     <div className="min-h-screen bg-white">
      <header className="border-b border-gray-200">
   <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between px-4 py-4 gap-4 sm:gap-0">
-    <h1 className="text-xl font-bold tracking-tight">Estate Run</h1>
-
+        <div className="flex items-center gap-6">
+          <a href="/" className="flex items-center gap-2">
+            <Leaf className="h-6 w-6 text-green-600" />
+            <span className="text-xl font-bold text-green-800">AgroMat</span>
+          </a>
+        </div>
     <div className="flex items-center gap-4">
       <span className="text-sm font-medium hidden sm:inline">Welcome, Resident</span>
 
@@ -334,7 +338,7 @@ interface UserOrder {
 
       <footer className="border-t border-gray-200 py-6">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600">
-          &copy; {new Date().getFullYear()} Estate Run. All rights reserved.
+          &copy; {new Date().getFullYear()} Agromat. All rights reserved.
         </div>
       </footer>
     </div>

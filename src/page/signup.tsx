@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { signupUser } from "@/service/authService"
-
+import {Leaf } from "lucide-react";
 interface FormData {
   firstName: string
   lastName: string
@@ -364,8 +364,9 @@ export default function Signup() {
       <header className="border-b border-gray-200">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <a href="/">
-              <h1 className="text-2xl font-bold tracking-tight">Estate Run</h1>
+            <a href="/" className="flex items-center gap-2">
+              <Leaf className="h-6 w-6 text-green-600" />
+              <span className="text-xl font-bold text-green-800">AgroMat</span>
             </a>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Already have an account?</span>
@@ -381,7 +382,7 @@ export default function Signup() {
         <div className="mx-auto max-w-2xl">
           <Card className="border-black/10">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Join Estate Run</CardTitle>
+              <CardTitle className="text-2xl">Join <span className="text-green-800">Agromat</span></CardTitle>
               <CardDescription>Create your account and start using our platform</CardDescription>
             </CardHeader>
             <CardContent>
@@ -444,7 +445,7 @@ export default function Signup() {
                   <TabsContent value="vendor" className="space-y-4">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold">Vendor Registration</h3>
-                      <p className="text-sm text-gray-600">Register your supermarket to start selling</p>
+                      <p className="text-sm text-gray-600">Register your store to start selling</p>
                     </div>
 
                     {renderCommonFields()}
@@ -453,7 +454,7 @@ export default function Signup() {
                       <Label htmlFor="businessName">Business Name *</Label>
                       <Input
                         id="businessName"
-                        placeholder="Fresh Mart"
+                        placeholder="Fresh Farms"
                         value={formData.businessName || ""}
                         onChange={(e) => handleInputChange("businessName", e.target.value)}
                         onBlur={() => handleBlur("businessName")}
@@ -469,7 +470,7 @@ export default function Signup() {
                       <Label htmlFor="address">Business Address *</Label>
                       <Input
                         id="address"
-                        placeholder="456 Estate Plaza, Ground Floor"
+                        placeholder="456 road, plot 7 "
                         value={formData.address || ""}
                         onChange={(e) => handleInputChange("address", e.target.value)}
                         onBlur={() => handleBlur("address")}
@@ -614,7 +615,7 @@ export default function Signup() {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isLoading}>
                       {isLoading
                         ? "Creating Account..."
                         : `Create ${activeTab === "user" ? "Resident" : activeTab === "vendor" ? "Vendor" : activeTab === "rider" ? "Rider" : "Admin"} Account`}
@@ -629,7 +630,7 @@ export default function Signup() {
 
       <footer className="border-t border-gray-200 py-6">
         <div className="container mx-auto px-4 text-center text-small text-gray-600">
-          &copy; {new Date().getFullYear()} Estate Run. All rights reserved.
+          &copy; {new Date().getFullYear()} Agromat. All rights reserved.
         </div>
       </footer>
     </div>

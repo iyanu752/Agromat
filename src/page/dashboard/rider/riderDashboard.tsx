@@ -29,8 +29,6 @@ import { toast } from "sonner";
 import { getRiderDashboard } from "@/service/dashboardService";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "@/service/authService";
-// Mock data for rider stats
-
 
 // Mock data for orders
 interface Orders {
@@ -47,6 +45,11 @@ interface Orders {
   items: {
     product: any;
     quantity: number;
+    supermarket: {
+      _id: string;
+      name: string;
+      dropshippingMode?: boolean; // Add this field
+    } | string; // Can also be just a string ID
   }[];
   totalAmount: number;
   deliveryAddress: string;
@@ -67,7 +70,6 @@ interface RiderStats {
   pendingDeliveries: number;
   rating: number;
 }
-
 
 // Verification Modal Component
 const VerificationModal = ({
@@ -148,13 +150,13 @@ export default function RiderDashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false);
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const [riderStats, setRiderStats] = useState<RiderStats>({
-  totalDeliveries: 0,
-  todayDeliveries: 0,
-  pendingDeliveries: 0,
-  rating: 0.0
-});
+    totalDeliveries: 0,
+    todayDeliveries: 0,
+    pendingDeliveries: 0,
+    rating: 0.0,
+  });
 
   const statusColors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -166,57 +168,80 @@ export default function RiderDashboard() {
     "payment-failed": "bg-red-50 text-red-700 border-red-200",
   };
 
-  const getOrders = async () => {
-    const allOrders = await getAllOrders();
-    // Filter out delivered orders for pending section
-    const pendingOrders = allOrders.filter((order: Orders) => order.status !== "delivered");
-    setOrders(pendingOrders);
+  const isDropshippingOrder = (order: Orders): boolean => {
+    return order.items.some((item) => {
+      if (typeof item.supermarket === 'object' && item.supermarket !== null) {
+        return item.supermarket.dropshippingMode === true;
+      }
+      return false;
+    });
   };
+
+  // Filter out dropshipping orders
+  const filterNonDropshippingOrders = (orders: Orders[]): Orders[] => {
+    return orders.filter((order) => !isDropshippingOrder(order));
+  };
+
+const getOrders = async () => {
+  try {
+    const allOrders = await getAllOrders();
+    // Filter out delivered and dropshipping
+    const pendingOrders = filterNonDropshippingOrders(
+      allOrders.filter((order: Orders) => order.status !== "delivered")
+    );
+    setOrders(pendingOrders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    toast.error("Failed to fetch orders");
+  }
+};
+
 
   useEffect(() => {
     getOrders();
   }, []);
 
   useEffect(() => {
-      socket.on('connect', () => {
-        console.log('Connected to WebSocket');
-      });
-  
-      socket.on('orderPlaced', (data: any) => {
-        const orderid = data.product.orderId
-        toast.success(`New Order ${orderid} Placed!`);
-        setOrders((previousOrders) => [ data.product, ...previousOrders])
-      });
-
-
-      socket.on('orderStatusUpdate', (data: any) => {
-      console.log('data', data)
-      const orderStatus = data.orders.status
-      let message = ''
-         if (orderStatus === 'packed'){
-        message = `Order ${data.orders.orderId} has been packed, proceed to pickup`
-      }else if (orderStatus === 'delivered') {
-        message = 'Order delivered, Good Job'
-      }
-      toast.success(`${message}`);
-      getOrders()
-      // setOrders((previousOrders) => [ data.product, ...previousOrders])
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket");
     });
-  
-      return () => {
-        socket.off('orderPlaced');
-        socket.off('orderStatusUpdate')
-      };
-    }, []);
+
+socket.on("orderPlaced", (data: any) => {
+  const newOrder = data.product;
+
+  if (filterNonDropshippingOrders([newOrder]).length === 0) return;
+
+  toast.success(`New Order ${newOrder.orderId} Placed!`);
+  setOrders((previousOrders) => [newOrder, ...previousOrders]);
+});
 
 
+    socket.on("orderStatusUpdate", (data: any) => {
+      console.log("data", data);
+      const orderStatus = data.orders.status;
+      let message = "";
+      if (orderStatus === "packed") {
+        message = `Order ${data.orders.orderId} has been packed, proceed to pickup`;
+      } else if (orderStatus === "delivered") {
+        message = "Order delivered, Good Job";
+      }
+      if (message) {
+        toast.success(message);
+      }
+      getOrders();
+    });
 
+    return () => {
+      socket.off("orderPlaced");
+      socket.off("orderStatusUpdate");
+    };
+  }, []);
 
-    const logout = async () => {
-    const userId = localStorage.getItem('userId');
+  const logout = async () => {
+    const userId = localStorage.getItem("userId");
 
     if (!userId) {
-      toast.error('No user found to log out.');
+      toast.error("No user found to log out.");
       return;
     }
 
@@ -224,15 +249,15 @@ export default function RiderDashboard() {
       await logoutUser(userId);
 
       // Clean up localStorage or cookies
-      localStorage.removeItem('userId');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("userId");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-      toast.success('You have been logged out');
-      navigate('/');
+      toast.success("You have been logged out");
+      navigate("/");
     } catch (error) {
-      console.error('Logout error:', error);
-      toast.error(typeof error === 'string' ? error : 'Logout failed');
+      console.error("Logout error:", error);
+      toast.error(typeof error === "string" ? error : "Logout failed");
     }
   };
 
@@ -244,12 +269,12 @@ export default function RiderDashboard() {
     try {
       const response = await getRiderDashboard(riderId);
       if (response) {
-        console.log('response', response)
+        console.log("response", response);
         setRiderStats({
           totalDeliveries: response.totalDeliveries || 0,
           todayDeliveries: response.todayDeliveries || 0,
           pendingDeliveries: response.pendingDeliveries || 0,
-          rating: response.rating || 0.0
+          rating: response.rating || 0.0,
         });
       }
     } catch (error) {
@@ -261,39 +286,46 @@ export default function RiderDashboard() {
     fetchDashboard();
   }, []);
 
+const getOrdersHistory = async () => {
+  try {
+    const riderId = localStorage.getItem("userId");
+    if (!riderId) return;
 
-  const getOrdersHistory = async () => {
-    try {
-      const riderId = localStorage.getItem("userId");
-      if (!riderId) return;
-      const orders = await getOrderHistory(riderId);
-      // Only show delivered orders in history
-      const deliveredOrders = orders.filter((order: Orders) => order.status === "delivered");
-      setOrderHistory(deliveredOrders);
-      console.log("Order history:", deliveredOrders);
-    } catch (error) {
-      console.error("Failed to fetch rider order history", error);
-    }
-  };
+    const orders = await getOrderHistory(riderId);
+    const deliveredNonDropshippingOrders = filterNonDropshippingOrders(
+      orders.filter((order: Orders) => order.status === "delivered")
+    );
+    setOrderHistory(deliveredNonDropshippingOrders);
+    console.log("Order history:", deliveredNonDropshippingOrders);
+  } catch (error) {
+    console.error("Failed to fetch rider order history", error);
+  }
+};
+
 
   useEffect(() => {
     getOrdersHistory();
   }, []);
 
   const verifyDelivery = async (orderId: string, code: string) => {
-    const orderVerify = await verifyOrderCode(orderId, code);
-    if(orderVerify.success){
-      toast.success("Delivery verified successfully")
-      await updateOrderStatus(orderId, "delivered")
-      setShowVerificationModal(false);
-      setSelectedOrderId("")
-      // Refresh both lists to move delivered item from pending to history
-      getOrders()
-      getOrdersHistory()
-    }else {
-      toast.error("Failed to verify the delivery")
+    try {
+      const orderVerify = await verifyOrderCode(orderId, code);
+      if (orderVerify.success) {
+        toast.success("Delivery verified successfully");
+        await updateOrderStatus(orderId, "delivered");
+        setShowVerificationModal(false);
+        setSelectedOrderId("");
+        // Refresh both lists to move delivered item from pending to history
+        getOrders();
+        getOrdersHistory();
+      } else {
+        toast.error("Failed to verify the delivery");
+      }
+    } catch (error) {
+      console.error("Error verifying delivery:", error);
+      toast.error("Failed to verify the delivery");
     }
-  }
+  };
 
   const handleOrderDetailsClick = (order: any) => {
     setSelectedOrder(order);
@@ -309,30 +341,46 @@ export default function RiderDashboard() {
     try {
       const riderId = localStorage.getItem("userId");
       if (!riderId) {
+        toast.error("User ID not found");
         return;
       }
       await assignToRider(orderId, riderId);
-      orders.map((order) => {
-        if (order.orderId === orderId) {
-          updateStatus(orderId, "out-for-delivery");
-        }
-      });
+      
+      // Find and update the order status locally
+      const orderToUpdate = orders.find(order => order.orderId === orderId);
+      if (orderToUpdate) {
+        updateStatus(orderId, "out-for-delivery");
+      }
     } catch (error) {
       console.error("Failed to assign order to rider", error);
+      
+      // Check if the error is related to dropshipping
+      if (error instanceof Error && error.message.includes('dropshipping')) {
+        toast.error("This order is handled by dropshipping and doesn't require a rider");
+      } else {
+        toast.error("Failed to assign order");
+      }
     }
   };
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
-      orders.map((order) => {
-        if (order.orderId === orderId) {
-          order.status = newStatus;
-        }
-      });
+      
+      // Update local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.orderId === orderId 
+            ? { ...order, status: newStatus }
+            : order
+        )
+      );
+      
+      // Refresh orders to get updated data
       getOrders();
     } catch (error) {
       console.error("Failed to update order status", error);
+      toast.error("Failed to update order status");
     }
   };
 
@@ -348,10 +396,10 @@ export default function RiderDashboard() {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -360,7 +408,7 @@ export default function RiderDashboard() {
       <header className="border-b border-gray-200">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-            Estate Run
+            Agromat
           </h1>
           <div className="flex items-center gap-2 sm:gap-4">
             <span className="text-xs sm:text-sm font-medium hidden sm:block">
@@ -372,10 +420,10 @@ export default function RiderDashboard() {
                 <span className="sr-only">Profile</span>
               </Button>
             </a>
-              <Button variant="ghost" size="icon" onClick={logout}>
-                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="sr-only">Logout</span>
-              </Button>
+            <Button variant="ghost" size="icon" onClick={logout}>
+              <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="sr-only">Logout</span>
+            </Button>
           </div>
         </div>
       </header>
@@ -444,7 +492,7 @@ export default function RiderDashboard() {
               <div className="flex items-center">
                 <Star className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
                 <span className="text-lg sm:text-2xl font-bold">
-                  {riderStats.rating}
+                  {riderStats.rating.toFixed(1)}
                 </span>
               </div>
             </CardContent>
@@ -466,103 +514,115 @@ export default function RiderDashboard() {
               Available Deliveries
             </h3>
 
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <Card key={order.orderId} className="border-black/10">
-                  <CardHeader className="p-3 sm:p-4 pb-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <CardTitle className="text-sm sm:text-lg">{`${order.userId.firstName} ${order.userId.lastName}`}</CardTitle>
-                        <p className="text-xs sm:text-sm text-gray-500">
-                          #{order.orderId}
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-800">
-                          Verification code •{" "}
-                          <span className="font-bold">
-                            {order.verificationCode
-                              ? "*****" + order.verificationCode.slice(-1)
-                              : "******"}
+            {orders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="mx-auto h-12 w-12 mb-4 text-gray-300" />
+                <p>No pending deliveries available</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  New orders will appear here when they're ready for delivery
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <Card key={order.orderId} className="border-black/10">
+                    <CardHeader className="p-3 sm:p-4 pb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <CardTitle className="text-sm sm:text-lg">
+                            {`${order.userId.firstName} ${order.userId.lastName}`}
+                          </CardTitle>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            #{order.orderId}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-800">
+                            Verification code •{" "}
+                            <span className="font-bold">
+                              {order.verificationCode
+                                ? "*****" + order.verificationCode.slice(-1)
+                                : "******"}
+                            </span>
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            statusColors[order.status ?? "pending"] ||
+                            "bg-gray-100 text-gray-800 border-gray-300"
+                          } text-xs self-start sm:self-center`}
+                        >
+                          {order.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                      <div className="grid gap-2">
+                        <div className="flex items-start text-xs sm:text-sm">
+                          <MapPin className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <span className="break-words">
+                            {order.deliveryAddress}
                           </span>
-                        </p>
+                        </div>
+                        <div className="flex items-center text-xs sm:text-sm">
+                          <Package className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                          {order.items.length} items • ₦{order.totalAmount}
+                        </div>
+                        <div className="flex items-center text-xs sm:text-sm">
+                          <Truck className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                          Delivery fee: ₦500
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={`${
-                          statusColors[order.status ?? "pending"] ||
-                          "bg-gray-100 text-gray-800 border-gray-300"
-                        } text-xs self-start sm:self-center`}
-                      >
-                        {order.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-4 pt-0">
-                    <div className="grid gap-2">
-                      <div className="flex items-start text-xs sm:text-sm">
-                        <MapPin className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="break-words">
-                          {order.deliveryAddress}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-xs sm:text-sm">
-                        <Package className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
-                        {order.items.length} items • ₦{order.totalAmount}
-                      </div>
-                      <div className="flex items-center text-xs sm:text-sm">
-                        <Truck className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
-                        Delivery fee: ₦500
-                      </div>
-                    </div>
-                    <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                      {order.status === "packed" ||
-                      order.status === "pending" ? (
+                      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                        {order.status === "packed" ||
+                        order.status === "pending" ? (
+                          <Button
+                            onClick={() =>
+                              order.orderId && acceptDelivery(order.orderId)
+                            }
+                            size="sm"
+                            disabled={!order.orderId}
+                            className="w-full sm:w-auto text-xs sm:text-sm"
+                          >
+                            Accept Delivery
+                          </Button>
+                        ) : order.status === "out-for-delivery" ? (
+                          <Button
+                            onClick={() =>
+                              order.orderId && markAsOutForDelivery(order.orderId)
+                            }
+                            size="sm"
+                            disabled={!order.orderId}
+                            className="w-full sm:w-auto text-xs sm:text-sm"
+                          >
+                            Mark as Delivered
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() =>
+                              order.orderId && completeDelivery(order.orderId)
+                            }
+                            size="sm"
+                            disabled={!order.orderId}
+                            hidden={order.status === "delivered"}
+                            className="w-full sm:w-auto text-xs sm:text-sm"
+                          >
+                            Mark as Out-For-Delivery
+                          </Button>
+                        )}
                         <Button
-                          onClick={() =>
-                            order.orderId && acceptDelivery(order.orderId)
-                          }
+                          variant="outline"
                           size="sm"
-                          disabled={!order.orderId}
                           className="w-full sm:w-auto text-xs sm:text-sm"
+                          onClick={() => handleOrderDetailsClick(order)}
                         >
-                          Accept Delivery
+                          View Details
                         </Button>
-                      ) : order.status === "out-for-delivery" ? (
-                        <Button
-                          onClick={() =>
-                            order.orderId && markAsOutForDelivery(order.orderId)
-                          }
-                          size="sm"
-                          disabled={!order.orderId}
-                          className="w-full sm:w-auto text-xs sm:text-sm"
-                        >
-                          Mark as Delivered
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() =>
-                            order.orderId && completeDelivery(order.orderId)
-                          }
-                          size="sm"
-                          disabled={!order.orderId}
-                          hidden = {order.status === "delivered"}
-                          className="w-full sm:w-auto text-xs sm:text-sm"
-                        >
-                          Mark as Out-For-Delivery
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto text-xs sm:text-sm"
-                        onClick={() => handleOrderDetailsClick(order)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="border-none p-0">
@@ -592,11 +652,11 @@ export default function RiderDashboard() {
                           delivered
                         </Badge>
                       </div>
-                      
+
                       <div className="text-xs text-gray-600">
                         <p className="truncate">{history.deliveryAddress}</p>
                       </div>
-                      
+
                       <div className="flex justify-between items-center">
                         <div className="text-xs">
                           <p className="font-medium">₦{history.totalAmount}</p>
@@ -625,14 +685,19 @@ export default function RiderDashboard() {
                     <th className="px-4 py-3 font-medium text-sm">Customer</th>
                     <th className="px-4 py-3 font-medium text-sm">Address</th>
                     <th className="px-4 py-3 font-medium text-sm">Amount</th>
-                    <th className="px-4 py-3 font-medium text-sm">Delivery Fee</th>
+                    <th className="px-4 py-3 font-medium text-sm">
+                      Delivery Fee
+                    </th>
                     <th className="px-4 py-3 font-medium text-sm">Completed</th>
                     <th className="px-4 py-3 font-medium text-sm">Rating</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orderHistory.map((history) => (
-                    <tr key={history.orderId} className="border-b hover:bg-gray-50">
+                    <tr
+                      key={history.orderId}
+                      className="border-b hover:bg-gray-50"
+                    >
                       <td className="px-4 py-3 text-sm">
                         <div>
                           <p className="font-medium">{history.orderId}</p>
@@ -648,7 +713,10 @@ export default function RiderDashboard() {
                         {`${history.userId.firstName} ${history.userId.lastName}`}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <div className="max-w-[200px] truncate" title={history.deliveryAddress}>
+                        <div
+                          className="max-w-[200px] truncate"
+                          title={history.deliveryAddress}
+                        >
                           {history.deliveryAddress}
                         </div>
                       </td>
@@ -677,6 +745,9 @@ export default function RiderDashboard() {
               <div className="text-center py-8 text-gray-500">
                 <Package className="mx-auto h-12 w-12 mb-4 text-gray-300" />
                 <p>No delivered orders yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Completed deliveries will appear here
+                </p>
               </div>
             )}
           </TabsContent>
@@ -702,7 +773,7 @@ export default function RiderDashboard() {
 
       <footer className="border-t border-gray-200 py-6">
         <div className="container mx-auto px-4 text-center text-xs sm:text-sm text-gray-600">
-          &copy; {new Date().getFullYear()} Estate Run. All rights reserved.
+          &copy; {new Date().getFullYear()} Agromat. All rights reserved.
         </div>
       </footer>
     </div>

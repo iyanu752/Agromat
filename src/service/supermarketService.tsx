@@ -32,4 +32,29 @@ const updateStatus = async (id: string , payload: {isOpen: boolean}) => {
 };
 
 
-export { getSupermarket, updateStatus, updateSupermarket }
+const toggleHolidayMode = async (id: string, enabled: boolean) => {
+  try {
+    const response = await axios.patch(
+      `${API_ENDPOINTS.SUPERMARKET}/${id}/holiday-mode`,
+      { enabled }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling holiday mode", error);
+  }
+};
+
+const toggleDropshippingMode = async (id: string, enabled: boolean) => {
+  try {
+    const response = await axios.patch(
+      `${API_ENDPOINTS.SUPERMARKET}/${id}/dropshipping-mode`,
+      { enabled }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling dropshipping mode", error);
+  }
+};
+
+
+export { getSupermarket, updateStatus, updateSupermarket, toggleDropshippingMode, toggleHolidayMode }

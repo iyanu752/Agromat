@@ -128,7 +128,7 @@ export default function LoginPage() {
           </Button>
         </div>
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full  bg-green-600 hover:bg-green-700" disabled={isLoading}>
         {isLoading ? "Logging in..." : `Login as ${label}`}
       </Button>
     </form>
@@ -138,7 +138,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <Card className="w-full max-w-md border-black/10">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Login to Estate Run</CardTitle>
+          <CardTitle className="text-2xl">Login to <span className="text-green-800">Agromat</span></CardTitle>
           <CardDescription>
             Access your account based on your role
           </CardDescription>
