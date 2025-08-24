@@ -140,6 +140,7 @@ export default function VendorDashboard() {
   const supermarketOpenTime = supermarket?.openTime || "9:00 AM";
   const supermarketCloseTime = supermarket?.closeTime || "9:00 PM";
   const supermarketDescription = supermarket?.description || "";
+  const supermarketImage = supermarket?.image || "/placeholder.svg"
   const supermarketId = supermarket?._id;
   const vendorId = supermarket?.ownerId || "";
   const [isOpen, setIsOpen] = useState(false);
@@ -646,7 +647,7 @@ useEffect(() => {
             </CardHeader>
             <CardContent className="p-4 pt-2">
               <img
-                src="/placeholder.svg"
+                src={supermarketImage}
                 alt={supermarketName}
                 className="mb-3 h-[120px] sm:h-[150px] w-full rounded-md object-cover"
               />
