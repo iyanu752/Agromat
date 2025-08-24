@@ -3,7 +3,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Settings, Upload, Clock, Building, Camera, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { uploadImage } from "@/service/uploadService"
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -166,6 +167,9 @@ export function SupermarketSettingsModal({
     autoSchedule: settings.autoSchedule || defaultAutoSchedule,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<
     "general" | "schedule" | "advanced"
   >("general");
@@ -229,7 +233,6 @@ export function SupermarketSettingsModal({
       return;
     }
 
-
     if (field === "dropshippingMode") {
       setFormData((prev) => ({
         ...prev,
@@ -255,53 +258,53 @@ export function SupermarketSettingsModal({
   }, [formData.holidayMode]);
 
   const handleToggleHolidayMode = async (enabled: boolean) => {
-  if (!formData._id) {
-    console.error("Supermarket ID is missing");
-    return;
-  }
+    if (!formData._id) {
+      console.error("Supermarket ID is missing");
+      return;
+    }
 
-  try {
-    await toggleHolidayMode(formData._id, enabled);
-    setFormData((prev) => ({
-      ...prev,
-      holidayMode: enabled,
-      isOpen: enabled ? false : prev.isOpen, // close supermarket if holiday mode ON
-    }));
+    try {
+      await toggleHolidayMode(formData._id, enabled);
+      setFormData((prev) => ({
+        ...prev,
+        holidayMode: enabled,
+        isOpen: enabled ? false : prev.isOpen,
+      }));
 
-    toast.success(
-      enabled
-        ? "Holiday mode enabled - Store will appear closed to customers"
-        : "Holiday mode disabled"
-    );
-  } catch (error) {
-    console.error("Error toggling holiday mode:", error);
-    toast.error("Failed to update holiday mode");
-  }
-};
+      toast.success(
+        enabled
+          ? "Holiday mode enabled - Store will appear closed to customers"
+          : "Holiday mode disabled"
+      );
+    } catch (error) {
+      console.error("Error toggling holiday mode:", error);
+      toast.error("Failed to update holiday mode");
+    }
+  };
 
-const handleToggleDropshippingMode = async (enabled: boolean) => {
-  if (!formData._id) {
-    console.error("Supermarket ID is missing");
-    return;
-  }
+  const handleToggleDropshippingMode = async (enabled: boolean) => {
+    if (!formData._id) {
+      console.error("Supermarket ID is missing");
+      return;
+    }
 
-  try {
-    await toggleDropshippingMode(formData._id, enabled);
-    setFormData((prev) => ({
-      ...prev,
-      dropshippingMode: enabled,
-    }));
+    try {
+      await toggleDropshippingMode(formData._id, enabled);
+      setFormData((prev) => ({
+        ...prev,
+        dropshippingMode: enabled,
+      }));
 
-    toast.success(
-      enabled
-        ? "Dropshipping mode enabled - Riders will no longer receive order notifications"
-        : "Dropshipping mode disabled"
-    );
-  } catch (error) {
-    console.error("Error toggling dropshipping mode:", error);
-    toast.error("Failed to update dropshipping mode");
-  }
-};
+      toast.success(
+        enabled
+          ? "Dropshipping mode enabled - Riders will no longer receive order notifications"
+          : "Dropshipping mode disabled"
+      );
+    } catch (error) {
+      console.error("Error toggling dropshipping mode:", error);
+      toast.error("Failed to update dropshipping mode");
+    }
+  };
 
   const handleScheduleChange = (
     day: keyof Omit<AutoSchedule, "enabled">,
@@ -320,10 +323,58 @@ const handleToggleDropshippingMode = async (enabled: boolean) => {
     }));
   };
 
-  const handleImageUpload = () => {
-    // In a real implementation, you'd handle file upload here
-    const newImageUrl = "/placeholder.svg?height=200&width=200&text=New+Image";
-    handleInputChange("image", newImageUrl);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      
+      // Validate file type
+      if (!selectedFile.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
+      
+      setFile(selectedFile);
+    }
+  };
+
+  const handleSelectImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = async () => {
+    if (!file) {
+      toast.warning("Please select an image first");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const result = await uploadImage(file);
+      
+      // Update form data with the uploaded image URL
+      setFormData(prev => ({ ...prev, image: result.secure_url }));
+      
+      // Clear the file state since upload is complete
+      setFile(null);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -465,14 +516,41 @@ const handleToggleDropshippingMode = async (enabled: boolean) => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="space-y-2">
+                        {/* Hidden file input */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={handleImageUpload}
+                          onClick={handleSelectImage}
+                          disabled={isUploading}
                         >
                           <Upload className="mr-2 h-4 w-4" />
-                          Upload New Image
+                          Select Image
                         </Button>
+                        
+                        {file && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={handleImageUpload}
+                              disabled={isUploading}
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              {isUploading ? "Uploading..." : "Upload Selected Image"}
+                            </Button>
+                            <span className="text-xs text-gray-600">{file.name}</span>
+                          </div>
+                        )}
+                        
                         <p className="text-xs text-gray-500">
                           Recommended: Square image, at least 200x200px
                         </p>
@@ -800,95 +878,94 @@ const handleToggleDropshippingMode = async (enabled: boolean) => {
             {/* Advanced Tab */}
             {activeTab === "advanced" && (
               <div className="space-y-6">
-{/* Holiday Mode */}
-<Card>
-  <CardHeader>
-    <CardTitle>Holiday Mode</CardTitle>
-    <CardDescription>
-      Temporarily close your store for holidays or maintenance
-    </CardDescription>
-  </CardHeader>
-  <CardContent>
-    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-      <div>
-        <Label
-          htmlFor="holidayMode"
-          className="text-base font-medium"
-        >
-          Enable Holiday Mode
-        </Label>
-        <p className="text-sm text-gray-500">
-          Override all schedules and keep the store closed
-        </p>
-      </div>
-      <Switch
-        id="holidayMode"
-        checked={formData.holidayMode || false}
-        onCheckedChange={(checked) =>
-          handleToggleHolidayMode(checked)   
-        }
-      />
-    </div>
-    {formData.holidayMode && (
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-800">
-          <strong>Holiday Mode is active.</strong> Your store
-          will remain closed regardless of the schedule until
-          you disable this mode.
-        </p>
-      </div>
-    )}
-  </CardContent>
-</Card>
+                {/* Holiday Mode */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Holiday Mode</CardTitle>
+                    <CardDescription>
+                      Temporarily close your store for holidays or maintenance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div>
+                        <Label
+                          htmlFor="holidayMode"
+                          className="text-base font-medium"
+                        >
+                          Enable Holiday Mode
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Override all schedules and keep the store closed
+                        </p>
+                      </div>
+                      <Switch
+                        id="holidayMode"
+                        checked={formData.holidayMode || false}
+                        onCheckedChange={(checked) =>
+                          handleToggleHolidayMode(checked)   
+                        }
+                      />
+                    </div>
+                    {formData.holidayMode && (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          <strong>Holiday Mode is active.</strong> Your store
+                          will remain closed regardless of the schedule until
+                          you disable this mode.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-{/* Dropshipping Mode */}
-<Card>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <Truck className="h-4 w-4" />
-      Dropshipping Mode
-    </CardTitle>
-    <CardDescription>
-      Disable rider notifications and manage deliveries yourself
-    </CardDescription>
-  </CardHeader>
-  <CardContent>
-    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-      <div>
-        <Label
-          htmlFor="dropshippingMode"
-          className="text-base font-medium"
-        >
-          Enable Dropshipping Mode
-        </Label>
-        <p className="text-sm text-gray-500">
-          Prevent riders from receiving order notifications - you handle deliveries
-        </p>
-      </div>
-      <Switch
-        id="dropshippingMode"
-        checked={formData.dropshippingMode || false}
-        onCheckedChange={(checked) =>
-          handleToggleDropshippingMode(checked)   // 🔥 calls backend + updates state
-        }
-      />
-    </div>
-    {formData.dropshippingMode && (
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
-          <strong>Dropshipping Mode is active.</strong> 
-        </p>
-        <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
-          <li>Riders will not receive order notifications</li>
-          <li>You are responsible for managing all deliveries</li>
-          <li>Orders will still be visible in your dashboard</li>
-          <li>Customers can still place orders normally</li>
-        </ul>
-      </div>
-    )}
-  </CardContent>
-</Card>
-
+                {/* Dropshipping Mode */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Dropshipping Mode
+                    </CardTitle>
+                    <CardDescription>
+                      Disable rider notifications and manage deliveries yourself
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div>
+                        <Label
+                          htmlFor="dropshippingMode"
+                          className="text-base font-medium"
+                        >
+                          Enable Dropshipping Mode
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Prevent riders from receiving order notifications - you handle deliveries
+                        </p>
+                      </div>
+                      <Switch
+                        id="dropshippingMode"
+                        checked={formData.dropshippingMode || false}
+                        onCheckedChange={(checked) =>
+                          handleToggleDropshippingMode(checked)   
+                        }
+                      />
+                    </div>
+                    {formData.dropshippingMode && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Dropshipping Mode is active.</strong> 
+                        </p>
+                        <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                          <li>Riders will not receive order notifications</li>
+                          <li>You are responsible for managing all deliveries</li>
+                          <li>Orders will still be visible in your dashboard</li>
+                          <li>Customers can still place orders normally</li>
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Current Schedule Summary */}
                 <Card>
