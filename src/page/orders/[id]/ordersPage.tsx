@@ -42,7 +42,7 @@ export default function OrderPage() {
       setError(null);
       
       const userId = localStorage.getItem("userId");
-      console.log('userId', userId);
+      
       
       if (!userId) {
         setError("User ID not found. Please log in again.");
@@ -50,7 +50,7 @@ export default function OrderPage() {
       }
       
       const response = await getOrderByUserId(userId);
-      console.log("new orders", response);
+   
       setOrders(response);
     } catch (error) {
       console.error("❌ Error fetching vendor orders:", error);
@@ -66,7 +66,7 @@ export default function OrderPage() {
     });
 
     socket.on('orderStatusUpdate', (data: any) => {
-      console.log('data', data)
+     
       const orderStatus = data.orders.status
       let message = ''
       if(orderStatus === 'pending') {

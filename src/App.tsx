@@ -24,6 +24,7 @@ import UserProfile from "./page/profile/userProfile/userProfile"
 import RiderProfile from "./page/profile/userProfile/userProfile";
 import UserOrdersPage from "@/page/dashboard/user/orders/userOrdersPage"
 import AdminProfile from "./page/profile/adminProfile/adminProfile";
+import SupermarketList from "./page/dashboard/user/supermarketList";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -140,6 +141,7 @@ function App() {
     { path: "/profile/user", element: <UserProfile/> },
     { path: "/profile/rider", element: <RiderProfile/>},
     { path: "/profile/admin", element: <AdminProfile/>},
+    {path: "/supermarketlist", element: <SupermarketList/>}, 
     { path: "/dashboard/user/orders/:id", element: <UserOrdersPage/>},
   ]);
 

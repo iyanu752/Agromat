@@ -11,7 +11,7 @@ import { getSupermarket} from "@/service/supermarketService";
 import { toast } from "sonner"
 import { useMemo } from "react";
 import { addToCart, fetchCart } from "@/service/cartService"
-
+import { useNavigate} from "react-router-dom";
 
 export default function SupermarketPage() {
   interface Product {
@@ -27,7 +27,7 @@ export default function SupermarketPage() {
   description?: string;
   isAvailable?: boolean
   supermarket: string
-  ownerId?: string
+  ownerId?: string;
   // Add any other fields your API returns
 }
 
@@ -74,10 +74,14 @@ interface Supermarket {
    
   const [, setCart] = useState<Array<{ id: string; quantity: number }>>
   ([])
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const cartLength = cartItems.length
   const [userId, setUserId] = useState<string | null>(null)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  // Check if user is logged in
+  const isLoggedIn = userId !== null;
 
 const filteredItems = useMemo(() => {
   return product.filter((item) => {
@@ -151,6 +155,7 @@ const addItemsToCart = async (itemId: string) => {
 
   if (!userId) {
     toast.error("Please log in to add items to cart");
+     navigate(`/login`);
     return;
   }
   const payload = {
@@ -240,12 +245,16 @@ const addItemsToCart = async (itemId: string) => {
   const supermarketDescription = supermarket?.description || "";
   const supermarketStatus = supermarket?.isOpen || false
   const supermarketImage = supermarket?.image || "/placeholder.svg?height=100&width=200";
+
+  // Determine the back navigation path based on login status
+  const backPath = isLoggedIn ? "/dashboard/user" : "/supermarketlist";
+
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
-            <a href="/dashboard/user">
+            <a href={backPath}>
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="h-5 w-5" />
                 <span className="sr-only">Back</span>
@@ -260,18 +269,22 @@ const addItemsToCart = async (itemId: string) => {
             </Badge>
           </div>
           <div className="flex items-center gap-4">
-            <a href={`/cart/${userId}`}>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4" />
-                <span>Cart ({totalItems})</span>
-              </Button>
-            </a>
-            <a href="/">
-              <Button variant="ghost" size="icon">
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Logout</span>
-              </Button>
-            </a>
+            {isLoggedIn && (
+              <a href={`/cart/${userId}`}>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  <span>Cart ({totalItems})</span>
+                </Button>
+              </a>
+            )}
+            {isLoggedIn && (
+              <a href="/">
+                <Button variant="ghost" size="icon">
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Logout</span>
+                </Button>
+              </a>
+            )}
           </div>
         </div>
       </header>

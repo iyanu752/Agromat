@@ -153,7 +153,6 @@ export default function UserOrdersPage() {
         return;
       }
       const response = await getOrderByUserId(userId);
-      console.log("new orders", response);
       setOrders(response);
     } catch (error) {
       console.error("❌ Error fetching vendor orders:", error);

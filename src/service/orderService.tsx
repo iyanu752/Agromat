@@ -24,9 +24,8 @@ interface CreateOrderPayload {
 
 const createOrder = async (orderDetails: CreateOrderPayload) => {
   try {
-    console.log('📤 Sending order details:', orderDetails); 
+   
     const response = await axios.post(`${API_ENDPOINTS.ORDER}/createOrder`, orderDetails);
-    console.log('📥 Order response:', response.data); 
     return response.data;
   } catch (error) {
     console.error("❌ Error creating order:", error);

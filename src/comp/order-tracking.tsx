@@ -97,8 +97,6 @@ useEffect(() => {
 
  const getStatusBadgeColor = (currentStatus: string) => {
   const normalizedStatus = currentStatus.replace(/-/g, "_");
-  console.log('current status', currentStatus)
-  console.log("order", statusColors[normalizedStatus])
   return statusColors[normalizedStatus] || "bg-gray-100 text-gray-800 border-gray-300"
 }
 

@@ -161,8 +161,6 @@ export default function CheckoutPage() {
             const orderResponse = await createOrder(orderPayload);
 
             if (orderResponse?.success) {
-              console.log("✅ Order created successfully:", orderResponse);
-               console.log("userid", userId)
               await clearCart(userId!);
               window.location.href = `/orders/${response.reference}`;
               
@@ -182,7 +180,7 @@ export default function CheckoutPage() {
         })();
       },
       onClose: () => {
-        console.log("❌ Payment window closed");
+  
         setIspacked(false);
       },
     });
@@ -221,8 +219,6 @@ const fetchCartData = async (userId: string) => {
             supermarketId: item.Supermarket,
           };
         });
-
-      console.log("🛒 Transformed cart items:", transformedItems); // Debug log
       setCartItems(transformedItems);
     } catch (error) {
       console.error("Error fetching cart data:", error);

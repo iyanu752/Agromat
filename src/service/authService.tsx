@@ -1,12 +1,13 @@
 import API_ENDPOINTS from "@/config/endpoints";
 import axios, { AxiosError } from "axios";
 
-const loginUser = async (email: string, password: string, userType: string) => {
+const loginUser = async (email: string, password: string, userType: string, adminPassKey: string) => {
   try {
     const response = await axios.post(API_ENDPOINTS.LOGIN, {
       email,
       password,
       userType,
+      adminPassKey,
     });
 
     const { user, token } = response.data;
@@ -27,34 +28,30 @@ const loginUser = async (email: string, password: string, userType: string) => {
   }
 };
 
-const signupUser = async (
-  firstName: string,
-  lastName: string,
-  email: string,
-  password: string,
-  address: string,
-  phone: number,
-  userType: string,
-  estate: string,
-  businessDescription?: string,
-  businessPhoneNumber?: number,
-  businessName?: string
-): Promise<{ success: boolean; message: string }> => {
+const signupUser = async (data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  address: string;
+  phone: string;
+  userType: string;
+  estate: string;
+  businessDescription?: string;
+  businessPhoneNumber?: string;
+  businessName?: string;
+  adminPassKey?: string;
+}): Promise<{ success: boolean; message: string }> => {
   try {
     const payload = {
-      firstName,
-      lastName,
-      email,
-      password,
-      address,
-      phone,
-      userType,
-      estate,
-      // Only include business fields if it's a vendor
-      ...(userType === 'vendor' && {
-        businessName,
-        businessDescription,
-        businessPhoneNumber,
+      ...data,
+      ...(data.userType === 'vendor' && {
+        businessName: data.businessName,
+        businessDescription: data.businessDescription,
+        businessPhoneNumber: data.businessPhoneNumber,
+      }),
+      ...(data.userType === 'admin' && {
+        adminPassKey: data.adminPassKey,
       }),
     };
 
@@ -67,17 +64,14 @@ const signupUser = async (
     }
   } catch (err) {
     console.error('Signup failed', err);
-    
-    // Handle axios error response
     if (axios.isAxiosError(err) && err.response?.data) {
       const errorMessage = err.response.data.message || 'Signup failed. Please try again.';
       return { success: false, message: errorMessage };
     }
-    
-    const message = 'Signup failed. Please try again.';
-    return { success: false, message };
+    return { success: false, message: 'Signup failed. Please try again.' };
   }
 };
+
 
  const logoutUser = async (userId: string) => {
   try {

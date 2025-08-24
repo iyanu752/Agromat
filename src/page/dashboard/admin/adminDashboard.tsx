@@ -392,7 +392,6 @@ export default function AdminDashboard() {
         order.status && order.status.toLowerCase() === "packed"
       )
       
-      console.log("Filtered pending orders:", pendingOrdersFiltered)
       setPendingOrders(pendingOrdersFiltered)
       
     } catch (error) {

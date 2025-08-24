@@ -176,7 +176,6 @@ useEffect(() => {
     });
 
        socket.on('orderStatusUpdate', (data: any) => {
-      console.log('data', data)
       const orderStatus = data.orders.status
       let message = ''
         if (orderStatus === 'out-for-delivery'){
@@ -198,7 +197,7 @@ useEffect(() => {
   const getVendorOrder = async () => {
     try {
       const response = await getOrdersByVendorId(vendorId);
-      console.log("new orders", response);
+      
       setOrders(response);
     } catch (error) {
       console.error("❌ Error fetching vendor orders:", error);
@@ -291,7 +290,7 @@ useEffect(() => {
         const vendorId = userData.id;
         const profile = await getVendorProfile(vendorId);
         setProfileData(profile.user);
-        console.log("profile", profile);
+        
         return profile;
       }
     } catch (error) {
@@ -472,7 +471,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (supermarketId) {
-      console.log("supermarketid---", supermarketId);
+  
       fetchDashboardStats();
     }
   }, [supermarketId, dateFilter]);
@@ -480,7 +479,7 @@ useEffect(() => {
   const fetchDashboardStats = async () => {
     try {
       const res = await getVendorDashboard(supermarketId!, dateFilter);
-      console.log("📊 Dashboard stats:", res);
+   
       setDashboardStats(res);
     } catch (err) {
       console.error("❌ Error fetching dashboard stats:", err);
