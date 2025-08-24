@@ -321,7 +321,6 @@ const handleToggleDropshippingMode = async (enabled: boolean) => {
   };
 
   const handleImageUpload = () => {
-    console.log("Image upload would happen here");
     // In a real implementation, you'd handle file upload here
     const newImageUrl = "/placeholder.svg?height=200&width=200&text=New+Image";
     handleInputChange("image", newImageUrl);

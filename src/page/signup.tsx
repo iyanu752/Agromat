@@ -15,6 +15,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { signupUser } from "@/service/authService"
 import {Leaf } from "lucide-react";
+
+// Remove the environment check since we're using passkey approach
+// const ENABLE_ADMIN_SIGNUP = true;
+
 interface FormData {
   firstName: string
   lastName: string
@@ -26,14 +30,13 @@ interface FormData {
 
   // User specific
   address?: string
-  estate?: string
 
   // Vendor specific
   businessName?: string
   businessDescription?: string
   businessPhoneNumber?: string
 
-  // Rider specific - keeping for future use
+  adminPassKey?: string
 }
 
 interface FormErrors {
@@ -47,6 +50,7 @@ interface FormErrors {
   address?: string
   businessName?: string
   businessPhoneNumber?: string
+  adminPassKey?: string
 }
 
 export default function Signup() {
@@ -65,6 +69,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     phone: "",
+    adminPassKey: "",
     termsAccepted: false,
   })
 
@@ -135,7 +140,7 @@ export default function Signup() {
         break
       
       case 'address':
-        if ((activeTab === "user" || activeTab === "vendor") && !formData.address?.trim()) {
+        if ((activeTab === "user" || activeTab === "vendor" || activeTab === "admin") && !formData.address?.trim()) {
           newErrors.address = "Address is required"
         }
         break
@@ -149,6 +154,12 @@ export default function Signup() {
       case 'businessPhoneNumber':
         if (activeTab === "vendor" && formData.businessPhoneNumber && !/^\d{11}$/.test(formData.businessPhoneNumber)) {
           newErrors.businessPhoneNumber = "Business phone number must be exactly 11 digits"
+        }
+        break
+
+      case 'adminPassKey':
+        if (activeTab === "admin" && !formData.adminPassKey?.trim()) {
+          newErrors.adminPassKey = "Admin passkey is required"
         }
         break
       
@@ -173,6 +184,8 @@ export default function Signup() {
       fields.push('address')
     } else if (activeTab === "vendor") {
       fields.push('businessName', 'address', 'businessPhoneNumber')
+    } else if (activeTab === "admin") {
+      fields.push('address', 'adminPassKey')
     }
 
     let isValid = true
@@ -202,19 +215,20 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await signupUser(
-        formData.firstName,
-        formData.lastName,
-        formData.email,
-        formData.password,
-        formData.address || "", 
-        parseInt(formData.phone) || 0, 
-        activeTab, 
-        formData.estate || "", 
-        formData.businessDescription, 
-        formData.businessPhoneNumber ? parseInt(formData.businessPhoneNumber) : undefined,
-        formData.businessName
-      );
+    const response = await signupUser({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      password: formData.password,
+      address: formData.address || "",
+      phone: formData.phone,
+      userType: activeTab,
+      estate: "", // if you don’t have this yet, send an empty string
+      businessName: formData.businessName || "",
+      businessDescription: formData.businessDescription || "",
+      businessPhoneNumber: formData.businessPhoneNumber || "",
+      adminPassKey: formData.adminPassKey || ""
+    });
 
       if (response.success) {
         toast.success(response.message);
@@ -390,7 +404,7 @@ export default function Signup() {
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="user" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">Resident</span>
+                    <span className="hidden sm:inline">Buyer</span>
                   </TabsTrigger>
                   <TabsTrigger value="vendor" className="flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4" />
@@ -409,8 +423,8 @@ export default function Signup() {
                 <form onSubmit={handleSubmit} className="mt-6">
                   <TabsContent value="user" className="space-y-4">
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold">Resident Registration</h3>
-                      <p className="text-sm text-gray-600">Join as a resident to shop from local supermarkets</p>
+                      <h3 className="text-lg font-semibold">Buyer Registration</h3>
+                      <p className="text-sm text-gray-600">Join as a buyer to shop and invest in local supermarkets </p>
                     </div>
 
                     {renderCommonFields()}
@@ -429,16 +443,6 @@ export default function Signup() {
                       {getFieldError("address") && (
                         <p className="text-sm text-red-600">{getFieldError("address")}</p>
                       )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="estate">Estate</Label>
-                      <Input
-                        id="estate"
-                        placeholder="Opic, Isheri North Gra"
-                        value={formData.estate || ""}
-                        onChange={(e) => handleInputChange("estate", e.target.value)}
-                      />
                     </div>
                   </TabsContent>
 
@@ -532,52 +536,50 @@ export default function Signup() {
                         <p className="text-sm text-red-600">{getFieldError("address")}</p>
                       )}
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="estate">Estate</Label>
-                      <Input
-                        id="estate"
-                        placeholder="Your estate"
-                        value={formData.estate || ""}
-                        onChange={(e) => handleInputChange("estate", e.target.value)}
-                      />
-                    </div>
                   </TabsContent>
 
-                  <TabsContent value="admin" className="space-y-4">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold">Admin Registration</h3>
-                      <p className="text-sm text-gray-600">Create an admin account</p>
-                    </div>
+                    <TabsContent value="admin" className="space-y-4">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold">Admin Registration</h3>
+                        <p className="text-sm text-gray-600">Create an admin account</p>
+                      </div>
 
-                    {renderCommonFields()}
+                      {renderCommonFields()}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address *</Label>
-                      <Input
-                        id="address"
-                        placeholder="Your address"
-                        value={formData.address || ""}
-                        onChange={(e) => handleInputChange("address", e.target.value)}
-                        onBlur={() => handleBlur("address")}
-                        className={getFieldError("address") ? "border-red-500 focus:border-red-500" : ""}
-                        required
-                      />
-                      {getFieldError("address") && (
-                        <p className="text-sm text-red-600">{getFieldError("address")}</p>
-                      )}
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="adminPassKey">Admin Passkey *</Label>
+                        <Input
+                          id="adminPassKey"
+                          type="password"
+                          placeholder="Enter admin passkey"
+                          value={formData.adminPassKey || ""}
+                          onChange={(e) => handleInputChange("adminPassKey", e.target.value)}
+                          onBlur={() => handleBlur("adminPassKey")}
+                          className={getFieldError("adminPassKey") ? "border-red-500 focus:border-red-500" : ""}
+                          required
+                        />
+                        {getFieldError("adminPassKey") && (
+                          <p className="text-sm text-red-600">{getFieldError("adminPassKey")}</p>
+                        )}
+                        <p className="text-xs text-gray-500">Contact your system administrator for the admin passkey</p>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="estate">Estate</Label>
-                      <Input
-                        id="estate"
-                        placeholder="Your estate"
-                        value={formData.estate || ""}
-                        onChange={(e) => handleInputChange("estate", e.target.value)}
-                      />
-                    </div>
-                  </TabsContent>
+                      <div className="space-y-2">
+                        <Label htmlFor="address">Address *</Label>
+                        <Input
+                          id="address"
+                          placeholder="Your address"
+                          value={formData.address || ""}
+                          onChange={(e) => handleInputChange("address", e.target.value)}
+                          onBlur={() => handleBlur("address")}
+                          className={getFieldError("address") ? "border-red-500 focus:border-red-500" : ""}
+                          required
+                        />
+                        {getFieldError("address") && (
+                          <p className="text-sm text-red-600">{getFieldError("address")}</p>
+                        )}
+                      </div>
+                    </TabsContent>
 
                   {/* Terms and Conditions */}
                   <div className="mt-6 space-y-4">
@@ -618,7 +620,7 @@ export default function Signup() {
                     <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isLoading}>
                       {isLoading
                         ? "Creating Account..."
-                        : `Create ${activeTab === "user" ? "Resident" : activeTab === "vendor" ? "Vendor" : activeTab === "rider" ? "Rider" : "Admin"} Account`}
+                        : `Create ${activeTab === "user" ? "Buyer" : activeTab === "vendor" ? "Vendor" : activeTab === "rider" ? "Rider" : "Admin"} Account`}
                     </Button>
                   </div>
                 </form>

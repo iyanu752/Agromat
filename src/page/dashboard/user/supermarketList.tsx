@@ -2,17 +2,25 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Clock, LogOut, Search, ShoppingCart, User, Package, Leaf } from "lucide-react"
-import { socket } from "@/utils/socket";
+import { Clock,
+    //  LogOut,
+      Search,
+       ShoppingCart,
+        // User,
+        //  Package,
+        //   Leaf
+         } from "lucide-react"
+// import { socket } from "@/utils/socket";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { getSupermarket } from "@/service/supermarketService"
-import { getOrderByUserId  } from "@/service/orderService"
-import { toast } from "sonner"
-import { logoutUser } from "@/service/authService"
-import { useNavigate } from "react-router-dom";
+// import { getOrderByUserId  } from "@/service/orderService"
+// import { toast } from "sonner"
+// import { logoutUser } from "@/service/authService"
+// import { useNavigate } from "react-router-dom";
+import Navbar from "@/comp/navbar";
 interface Supermarket {
   _id?: string;
   name?: string;
@@ -40,135 +48,135 @@ interface Supermarket {
 
 
 
-export default function UserDashboard() {
+export default function SupermarketList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [supermarket, setSupermarket] = useState<Supermarket[]>([]);
   const supermarketName = supermarket[0]?.name || "";
   const supermarketStatus = supermarket[0]?.isOpen;
-   const navigate = useNavigate();
+//    const navigate = useNavigate();
   const supermarketOpenTime = supermarket[0]?.openTime || "9:00 AM";
   const supermarketCloseTime = supermarket[0]?.closeTime || "9:00 PM";
   const supermarketDescription = supermarket[0]?.description || "";
   const supermarketId = supermarket[0]?._id;
-    const [orders, setOrders] = useState<UserOrder[]>([]);
+    // const [orders, setOrders] = useState<UserOrder[]>([]);
 // const filteredSupermarkets = supermarket.filter((market) =>
 //   market.name.toLowerCase().includes(searchQuery.toLowerCase())
 // );
 
-interface UserOrder {
-  _id: string;
-  userId: {
-    email: string;
-    firstName: string;
-    supermarket: string;
-  };
-  items: {
-    product: any;
-    quantity: number;
-  }[];
-  totalAmount: number;
-  deliveryAddress: string;
-  deliveryInstructions: string;
-  status: string;
-  orderId: string;
-  assignedRider: string;
-  createdAt: string;
-  verificationCode: string;
-}
+// interface UserOrder {
+//   _id: string;
+//   userId: {
+//     email: string;
+//     firstName: string;
+//     supermarket: string;
+//   };
+//   items: {
+//     product: any;
+//     quantity: number;
+//   }[];
+//   totalAmount: number;
+//   deliveryAddress: string;
+//   deliveryInstructions: string;
+//   status: string;
+//   orderId: string;
+//   assignedRider: string;
+//   createdAt: string;
+//   verificationCode: string;
+// }
 
 
 
-  const statusColors: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    // confirmed: "bg-blue-100 text-blue-800 border-blue-300",
-    packed: "bg-orange-100 text-orange-800 border-orange-300",
-    "out-for-delivery": "bg-purple-100 text-purple-800 border-purple-300",
-    delivered: "bg-green-100 text-green-800 border-green-300",
-    cancelled: "bg-red-100 text-red-800 border-red-300",
-    "payment-failed": "bg-red-50 text-red-700 border-red-200",
-  };
+//   const statusColors: Record<string, string> = {
+//     pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+//     // confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+//     packed: "bg-orange-100 text-orange-800 border-orange-300",
+//     "out-for-delivery": "bg-purple-100 text-purple-800 border-purple-300",
+//     delivered: "bg-green-100 text-green-800 border-green-300",
+//     cancelled: "bg-red-100 text-red-800 border-red-300",
+//     "payment-failed": "bg-red-50 text-red-700 border-red-200",
+//   };
 
 
 
-  const getUserOrder = async () => {
-    try {
-      const userId = localStorage.getItem("userId")
-     
-      if (!userId){
-         return;
-        }
-      const response = await getOrderByUserId(userId);
+//   const getUserOrder = async () => {
+//     try {
+//       const userId = localStorage.getItem("userId")
+//       console.log('userId', userId)
+//       if (!userId){
+//          return;
+//         }
+//       const response = await getOrderByUserId(userId);
+//       console.log("new orders", response);
+//       setOrders(response);
+//     } catch (error) {
+//       console.error("❌ Error fetching vendor orders:", error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     getUserOrder();
+//   }, []);
+
+//   useEffect(() => {
+//     socket.on('connect', () => {
+//       console.log('Connected to WebSocket');
+//     });
+
+//     socket.on('riderAcceptNotification', (data: any) => {
+//       const orderid = data.product.orderId
+//       toast.success(`${orderid} has been assigned to a rider`);
+//       // setOrders((previousOrders) => [ data.product, ...previousOrders])
+//     });
+
+//         socket.on('orderStatusUpdate', (data: any) => {
+//       console.log('data', data)
+//       const orderStatus = data.orders.status
+//       let message = ''
+//       if(orderStatus === 'pending') {
+//         message = 'Your order has been updated to pending'
+//       }else if (orderStatus === 'packed'){
+//         message = 'Your order has been packed'
+//       }else if (orderStatus === 'out-for-delivery'){
+//         message = 'Rider has picked up your order, Out for delivery'
+//       }else if (orderStatus === 'delivered') {
+//         message = 'Order delivered, Please rate the dispatch service'
+//       }
+//       toast.success(`${message}`);
+//       getUserOrder()
+//       // setOrders((previousOrders) => [ data.product, ...previousOrders])
+//     });
+
+
+//     return () => {
+//       socket.off('riderAcceptNotification');
+//       socket.off('orderStatusUpdate')
+//     };
+//   }, []);
   
-      setOrders(response);
-    } catch (error) {
-      console.error("❌ Error fetching vendor orders:", error);
-    }
-  };
 
-  useEffect(() => {
-    getUserOrder();
-  }, []);
+//     const logout = async () => {
+//     const userId = localStorage.getItem('userId');
 
-  useEffect(() => {
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket');
-    });
+//     if (!userId) {
+//       toast.error('No user found to log out.');
+//       return;
+//     }
 
-    socket.on('riderAcceptNotification', (data: any) => {
-      const orderid = data.product.orderId
-      toast.success(`${orderid} has been assigned to a rider`);
-      // setOrders((previousOrders) => [ data.product, ...previousOrders])
-    });
+//     try {
+//       await logoutUser(userId);
 
-        socket.on('orderStatusUpdate', (data: any) => {
-     
-      const orderStatus = data.orders.status
-      let message = ''
-      if(orderStatus === 'pending') {
-        message = 'Your order has been updated to pending'
-      }else if (orderStatus === 'packed'){
-        message = 'Your order has been packed'
-      }else if (orderStatus === 'out-for-delivery'){
-        message = 'Rider has picked up your order, Out for delivery'
-      }else if (orderStatus === 'delivered') {
-        message = 'Order delivered, Please rate the dispatch service'
-      }
-      toast.success(`${message}`);
-      getUserOrder()
-      // setOrders((previousOrders) => [ data.product, ...previousOrders])
-    });
+//       // Clean up localStorage or cookies
+//       localStorage.removeItem('userId');
+//       localStorage.removeItem('token');
+//       localStorage.removeItem('user');
 
-
-    return () => {
-      socket.off('riderAcceptNotification');
-      socket.off('orderStatusUpdate')
-    };
-  }, []);
-  
-
-    const logout = async () => {
-    const userId = localStorage.getItem('userId');
-
-    if (!userId) {
-      toast.error('No user found to log out.');
-      return;
-    }
-
-    try {
-      await logoutUser(userId);
-
-      // Clean up localStorage or cookies
-      localStorage.removeItem('userId');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-
-      toast.success('You have been logged out');
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error(typeof error === 'string' ? error : 'Logout failed');
-    }
-  };
+//       toast.success('You have been logged out');
+//       navigate('/');
+//     } catch (error) {
+//       console.error('Logout error:', error);
+//       toast.error(typeof error === 'string' ? error : 'Logout failed');
+//     }
+//   };
 
 
   const getSupermarkets = async() => {
@@ -185,7 +193,7 @@ interface UserOrder {
 
   return (
     <div className="min-h-screen bg-white">
-     <header className="border-b border-gray-200">
+     {/* <header className="border-b border-gray-200">
   <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between px-4 py-4 gap-4 sm:gap-0">
         <div className="flex items-center gap-6">
           <a href="/" className="flex items-center gap-2">
@@ -217,11 +225,15 @@ interface UserOrder {
         </Button>
     </div>
   </div>
-</header>
+</header> */}
+
+        <nav>
+            <Navbar/>
+        </nav>
 
 
       <main className="container mx-auto px-4 py-8">
-        {orders.length > 0 && (
+        {/* {orders.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Recent Orders</h2>
@@ -282,7 +294,7 @@ interface UserOrder {
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="mb-8">
           <h2 className="mb-4 text-2xl font-bold">Available Supermarkets</h2>

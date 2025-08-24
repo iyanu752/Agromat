@@ -218,7 +218,7 @@ socket.on("orderPlaced", (data: any) => {
 
 
     socket.on("orderStatusUpdate", (data: any) => {
-      console.log("data", data);
+
       const orderStatus = data.orders.status;
       let message = "";
       if (orderStatus === "packed") {
@@ -271,7 +271,7 @@ socket.on("orderPlaced", (data: any) => {
     try {
       const response = await getRiderDashboard(riderId);
       if (response) {
-        console.log("response", response);
+   
         setRiderStats({
           totalDeliveries: response.totalDeliveries || 0,
           todayDeliveries: response.todayDeliveries || 0,
@@ -298,7 +298,7 @@ const getOrdersHistory = async () => {
       orders.filter((order: Orders) => order.status === "delivered")
     );
     setOrderHistory(deliveredNonDropshippingOrders);
-    console.log("Order history:", deliveredNonDropshippingOrders);
+
   } catch (error) {
     console.error("Failed to fetch rider order history", error);
   }
@@ -337,7 +337,7 @@ const getOrdersHistory = async () => {
 
   const acceptDelivery = (orderId: string) => {
     assignRiderOrder(orderId);
-    console.log("Accepting delivery:", orderId);
+  
   };
 
   const assignRiderOrder = async (orderId: string) => {

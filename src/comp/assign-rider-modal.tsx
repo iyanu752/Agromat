@@ -174,7 +174,6 @@ export function AssignRiderModal({ isOpen, onClose, onAssign, order }: AssignRid
       // Step 2: Update order status to "out-for-delivery"
       try {
         await updateOrderStatus(order.orderId, "out-for-delivery")
-        console.log(`Order ${order.orderId} status updated to out-for-delivery`)
       } catch (statusError) {
         console.error("Error updating order status:", statusError)
         // Don't fail the entire operation if status update fails

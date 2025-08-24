@@ -27,11 +27,11 @@ export default function Home() {
                 from agriculture without traditional farming hassles.
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
-                <Button className="bg-green-600 hover:bg-green-700">
-                  Start Investing
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <a href="/products"><Button variant="outline">Explore Products</Button></a>
+                 <Button className="bg-green-600 hover:bg-green-700" disabled>
+                    Start Investing (Coming Soon)
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                <a href="/supermarketlist"><Button variant="outline">Explore Products</Button></a>
               </div>
             </div>
             <div className="relative md:block">
@@ -101,7 +101,9 @@ export default function Home() {
                   food security and economic growth.
                 </p>
                 <div className="mt-8">
-                  <Button className="bg-white text-green-800 hover:bg-green-100">Join us today</Button>
+                  <a href="/signup">
+                    <Button className="bg-white text-green-800 hover:bg-green-100">Join us today</Button>
+                  </a>
                 </div>
               </div>
               <div className="rounded-lg bg-green-700 p-8">

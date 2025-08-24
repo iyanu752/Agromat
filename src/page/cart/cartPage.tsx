@@ -85,8 +85,6 @@ export default function CartPage() {
 const fetchCartData = async (userId: string) => {
   try {
     const response = await fetchCart(userId);
-    console.log("Raw cart response:", response);
-    console.log("Response items:", response.items);
     response.items.forEach((item: any, index: number) => {
       console.log(`Item ${index}:`, {
         _id: item._id,
@@ -110,7 +108,6 @@ const fetchCartData = async (userId: string) => {
         supermarket: item.productId.category,
       }));
 
-    console.log("Transformed items:", transformedItems);
     setCartItems(transformedItems);
   } catch (error) {
     console.error("Error fetching cart data:", error);
@@ -126,7 +123,6 @@ const fetchCartData = async (userId: string) => {
   }, []);
 
 const updateQuantity = async (id: string, newQuantity: number) => {
-  console.log("updateQuantity called with:", { id, newQuantity, userId });
   
   if (!userId) return;
 
@@ -141,17 +137,14 @@ const updateQuantity = async (id: string, newQuantity: number) => {
     return;
   }
 
-  console.log("Updating item:", item);
 
   try {
     await updateCartItem(userId, item.productId, newQuantity);
     
     setCartItems((prevItems) => {
-      console.log("Previous items:", prevItems);
       const updatedItems = prevItems.map((i) =>
         i.id === id ? { ...i, quantity: newQuantity } : i
       );
-      console.log("Updated items:", updatedItems);
       return updatedItems;
     });
   } catch (error) {
@@ -169,7 +162,6 @@ const removeItem = async (cartItemId: string) => {
   }
 
   const item = cartItems.find(i => i.id === cartItemId);
-  console.log("Removing item:", item);
   if (!item?.productId) {
     console.error("Missing productId on item", item);
     toast.error("Invalid product ID. Cannot remove.");

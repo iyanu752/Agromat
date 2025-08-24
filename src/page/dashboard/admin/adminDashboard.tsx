@@ -392,7 +392,6 @@ export default function AdminDashboard() {
         order.status && order.status.toLowerCase() === "packed"
       )
       
-      console.log("Filtered pending orders:", pendingOrdersFiltered)
       setPendingOrders(pendingOrdersFiltered)
       
     } catch (error) {
@@ -415,7 +414,7 @@ export default function AdminDashboard() {
         return
       }
       const response = await getAdminDashboard(adminId)
-      console.log("Dashboard stats:", response)
+  
       setStats(response)
     } catch (error) {
       console.error('Error fetching admin dashboard data:', error)
@@ -428,7 +427,7 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true)
       const response = await getAllUsers()
-      console.log("All users:", response)
+     
       const transformedUsers = response.map((user: any) => ({
         ...user,
         name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
@@ -446,8 +445,7 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true)
       const response = await getAllVendors()
-      console.log("Raw vendors API response:", response)
-      
+    
       const transformedVendors = response.map((vendor: any) => ({
         ...vendor,
         superMarketName: vendor.superMarketName || vendor.supermarketName || vendor.supermarket_name || vendor.name || 'Unknown Supermarket',
@@ -456,7 +454,7 @@ export default function AdminDashboard() {
         items: vendor.items || 0
       }))
       
-      console.log("Transformed vendors:", transformedVendors)
+   
       setVendors(transformedVendors)
     } catch (error) {
       console.error('Error fetching all vendors:', error)
@@ -469,7 +467,7 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true)
       const response = await getAllRiders()
-      console.log("All riders:", response)
+  
       const transformedRiders = response.map((rider: any) => ({
         ...rider,
         name: rider.name || `${rider.firstName || ''} ${rider.lastName || ''}`.trim(),
@@ -555,7 +553,7 @@ export default function AdminDashboard() {
       )
     )
 
-    console.log(`Assigned order ${orderId} to rider ${riderId}`)
+
     setSelectedOrder(null)
     
     // Refresh orders after assignment
