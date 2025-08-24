@@ -585,7 +585,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200 sticky top-0 bg-white z-50">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold tracking-tight">Estate Run</h1>
+          <h1 className="text-xl font-bold tracking-tight">Agromat</h1>
           
           {/* Mobile menu button */}
           <div className="flex items-center gap-2 md:hidden">
@@ -1052,7 +1052,7 @@ export default function AdminDashboard() {
 
       <footer className="border-t border-gray-200 py-4 md:py-6 mt-8">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600">
-          &copy; {new Date().getFullYear()} Estate Run. All rights reserved.
+          &copy; {new Date().getFullYear()} Agromat. All rights reserved.
         </div>
       </footer>
     </div>

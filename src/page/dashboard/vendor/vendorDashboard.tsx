@@ -15,6 +15,7 @@ import {
   Calendar,
   Menu,
   X,
+  Leaf,
 } from "lucide-react";
 import { socket } from "@/utils/socket";
 import { AddEditItemModal } from "@/comp/add-edit-item-modal";
@@ -174,10 +175,25 @@ useEffect(() => {
       setOrders((previousOrders) => [ data.product, ...previousOrders])
     });
 
+       socket.on('orderStatusUpdate', (data: any) => {
+      console.log('data', data)
+      const orderStatus = data.orders.status
+      let message = ''
+        if (orderStatus === 'out-for-delivery'){
+        message = 'Rider has picked up order, Out for delivery'
+      }else if (orderStatus === 'delivered') {
+        message = 'Order delivered, Your goods have been delivered'
+      }
+      toast.success(`${message}`);
+      getVendorOrder()
+    });
+
     return () => {
       socket.off('orderPlaced');
+      socket.off('orderStatusUpdate')
     };
   }, []);
+
 
   const getVendorOrder = async () => {
     try {
@@ -208,34 +224,6 @@ useEffect(() => {
   }, [vendorId, isLoading]);
 
 
-   useEffect(() => {
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket');
-    });
-
-    socket.on('orderStatusUpdate', (data: any) => {
-      console.log('data', data)
-      const orderStatus = data.orders.status
-      let message = ''
-      // if(orderStatus === 'pending') {
-      //   message = 'Your order has been updated to pending'
-      // }else if (orderStatus === 'packed'){
-      //   message = 'Your order has been packed'
-      // }else 
-        if (orderStatus === 'out-for-delivery'){
-        message = 'Rider has picked up order, Out for delivery'
-      }else if (orderStatus === 'delivered') {
-        message = 'Order delivered, Your goods have been delivered'
-      }
-      toast.success(`${message}`);
-      getVendorOrder()
-      // setOrders((previousOrders) => [ data.product, ...previousOrders])
-    });
-
-    return () => {
-      socket.off('orderStatusUpdate');
-    };
-  }, []);
 
 
 
@@ -529,10 +517,12 @@ useEffect(() => {
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200 sticky top-0 bg-white z-50">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-            Estate Run
-          </h1>
-
+        <div className="flex items-center gap-6">
+          <a href="/" className="flex items-center gap-2">
+            <Leaf className="h-6 w-6 text-green-600" />
+            <span className="text-xl font-bold text-green-800">AgroMat</span>
+          </a>
+        </div>
           {/* Desktop Navigation */}
           <div className="hidden sm:flex items-center gap-2 md:gap-4">
             <span className="text-xs sm:text-sm font-medium hidden md:block">
@@ -1303,7 +1293,7 @@ useEffect(() => {
 
       <footer className="border-t border-gray-200 py-4 sm:py-6">
         <div className="container mx-auto px-4 text-center text-xs sm:text-sm text-gray-600">
-          &copy; {new Date().getFullYear()} Estate Run. All rights reserved.
+          &copy; {new Date().getFullYear()} Agromat. All rights reserved.
         </div>
       </footer>
     </div>

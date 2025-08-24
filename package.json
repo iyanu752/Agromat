@@ -1,14 +1,15 @@
 {
-  "name": "estate-run",
+  "name": "agromat2.0",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "type-check": "tsc --noEmit",
+  "lint": "eslint .",
+  "preview": "vite preview"
+},
   "dependencies": {
     "@paystack/inline-js": "^2.22.6",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -27,6 +28,7 @@
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.23.12",
     "lucide-react": "^0.516.0",
     "next-themes": "^0.4.6",
     "react": "^19.1.0",

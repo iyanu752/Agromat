@@ -4,7 +4,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { Settings, Upload, Clock, Building, Camera } from "lucide-react";
+import { Settings, Upload, Clock, Building, Camera, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   getSupermarket,
   updateSupermarket,
+  toggleDropshippingMode,
+  toggleHolidayMode
 } from "@/service/supermarketService";
 
 interface DaySchedule {
@@ -70,7 +72,8 @@ interface SupermarketSettings {
   autoSchedule?: AutoSchedule;
   timezone?: string;
   holidayMode?: boolean;
-  isOpen?: boolean; // Added missing property
+  dropshippingMode?: boolean; 
+  isOpen?: boolean;
 }
 
 interface SupermarketSettingsModalProps {
@@ -130,16 +133,6 @@ const timeSlots = [
   "11:00 PM",
   "11:30 PM",
 ];
-
-// const timezones = [
-//   "America/New_York",
-//   "America/Chicago",
-//   "America/Denver",
-//   "America/Los_Angeles",
-//   "America/Phoenix",
-//   "America/Anchorage",
-//   "Pacific/Honolulu",
-// ]
 
 const daysOfWeek = [
   { key: "monday", label: "Monday" },
@@ -236,6 +229,15 @@ export function SupermarketSettingsModal({
       return;
     }
 
+
+    if (field === "dropshippingMode") {
+      setFormData((prev) => ({
+        ...prev,
+        dropshippingMode: value as boolean,
+      }));
+      return;
+    }
+
     // General case
     setFormData((prev) => ({
       ...prev,
@@ -251,6 +253,55 @@ export function SupermarketSettingsModal({
       }));
     }
   }, [formData.holidayMode]);
+
+  const handleToggleHolidayMode = async (enabled: boolean) => {
+  if (!formData._id) {
+    console.error("Supermarket ID is missing");
+    return;
+  }
+
+  try {
+    await toggleHolidayMode(formData._id, enabled);
+    setFormData((prev) => ({
+      ...prev,
+      holidayMode: enabled,
+      isOpen: enabled ? false : prev.isOpen, // close supermarket if holiday mode ON
+    }));
+
+    toast.success(
+      enabled
+        ? "Holiday mode enabled - Store will appear closed to customers"
+        : "Holiday mode disabled"
+    );
+  } catch (error) {
+    console.error("Error toggling holiday mode:", error);
+    toast.error("Failed to update holiday mode");
+  }
+};
+
+const handleToggleDropshippingMode = async (enabled: boolean) => {
+  if (!formData._id) {
+    console.error("Supermarket ID is missing");
+    return;
+  }
+
+  try {
+    await toggleDropshippingMode(formData._id, enabled);
+    setFormData((prev) => ({
+      ...prev,
+      dropshippingMode: enabled,
+    }));
+
+    toast.success(
+      enabled
+        ? "Dropshipping mode enabled - Riders will no longer receive order notifications"
+        : "Dropshipping mode disabled"
+    );
+  } catch (error) {
+    console.error("Error toggling dropshipping mode:", error);
+    toast.error("Failed to update dropshipping mode");
+  }
+};
 
   const handleScheduleChange = (
     day: keyof Omit<AutoSchedule, "enabled">,
@@ -293,6 +344,12 @@ export function SupermarketSettingsModal({
       }
       await updateSupermarket(formData._id, formData);
       toast.success("Settings saved successfully");
+      
+      // Show specific toast messages for mode changes
+      if (formData.dropshippingMode) {
+        toast.info("Dropshipping mode enabled - Riders will no longer receive order notifications");
+      }
+      
       onSave(formData);
       onClose();
     } catch (error) {
@@ -507,7 +564,6 @@ export function SupermarketSettingsModal({
             {/* Schedule Tab */}
             {activeTab === "schedule" && (
               <div className="space-y-6">
-                {" "}
                 {!supermarketAutoSchedule.enabled && (
                   <Card>
                     <CardHeader>
@@ -569,6 +625,7 @@ export function SupermarketSettingsModal({
                     </CardContent>
                   </Card>
                 )}
+
                 {/* Auto Schedule Toggle */}
                 <Card>
                   <CardHeader>
@@ -611,6 +668,7 @@ export function SupermarketSettingsModal({
                     </div>
                   </CardContent>
                 </Card>
+
                 {/* Weekly Schedule */}
                 {supermarketAutoSchedule.enabled && (
                   <Card>
@@ -743,74 +801,95 @@ export function SupermarketSettingsModal({
             {/* Advanced Tab */}
             {activeTab === "advanced" && (
               <div className="space-y-6">
-                {/* Timezone */}
-                {/* <Card>
-                  <CardHeader>
-                    <CardTitle>Timezone Settings</CardTitle>
-                    <CardDescription>Set your local timezone for accurate scheduling</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <Label htmlFor="timezone">Timezone</Label>
-                      <Select 
-                        value={supermarketTimeZone} 
-                        onValueChange={(value) => handleInputChange("timezone", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timezones.map((tz) => (
-                            <SelectItem key={tz} value={tz}>
-                              {tz.replace("_", " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card> */}
+{/* Holiday Mode */}
+<Card>
+  <CardHeader>
+    <CardTitle>Holiday Mode</CardTitle>
+    <CardDescription>
+      Temporarily close your store for holidays or maintenance
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+      <div>
+        <Label
+          htmlFor="holidayMode"
+          className="text-base font-medium"
+        >
+          Enable Holiday Mode
+        </Label>
+        <p className="text-sm text-gray-500">
+          Override all schedules and keep the store closed
+        </p>
+      </div>
+      <Switch
+        id="holidayMode"
+        checked={formData.holidayMode || false}
+        onCheckedChange={(checked) =>
+          handleToggleHolidayMode(checked)   
+        }
+      />
+    </div>
+    {formData.holidayMode && (
+      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800">
+          <strong>Holiday Mode is active.</strong> Your store
+          will remain closed regardless of the schedule until
+          you disable this mode.
+        </p>
+      </div>
+    )}
+  </CardContent>
+</Card>
 
-                {/* Holiday Mode */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Holiday Mode</CardTitle>
-                    <CardDescription>
-                      Temporarily close your store for holidays or maintenance
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div>
-                        <Label
-                          htmlFor="holidayMode"
-                          className="text-base font-medium"
-                        >
-                          Enable Holiday Mode
-                        </Label>
-                        <p className="text-sm text-gray-500">
-                          Override all schedules and keep the store closed
-                        </p>
-                      </div>
-                      <Switch
-                        id="holidayMode"
-                        checked={formData.holidayMode || false}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("holidayMode", checked)
-                        }
-                      />
-                    </div>
-                    {formData.holidayMode && (
-                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-800">
-                          <strong>Holiday Mode is active.</strong> Your store
-                          will remain closed regardless of the schedule until
-                          you disable this mode.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+{/* Dropshipping Mode */}
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Truck className="h-4 w-4" />
+      Dropshipping Mode
+    </CardTitle>
+    <CardDescription>
+      Disable rider notifications and manage deliveries yourself
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+      <div>
+        <Label
+          htmlFor="dropshippingMode"
+          className="text-base font-medium"
+        >
+          Enable Dropshipping Mode
+        </Label>
+        <p className="text-sm text-gray-500">
+          Prevent riders from receiving order notifications - you handle deliveries
+        </p>
+      </div>
+      <Switch
+        id="dropshippingMode"
+        checked={formData.dropshippingMode || false}
+        onCheckedChange={(checked) =>
+          handleToggleDropshippingMode(checked)   // 🔥 calls backend + updates state
+        }
+      />
+    </div>
+    {formData.dropshippingMode && (
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          <strong>Dropshipping Mode is active.</strong> 
+        </p>
+        <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+          <li>Riders will not receive order notifications</li>
+          <li>You are responsible for managing all deliveries</li>
+          <li>Orders will still be visible in your dashboard</li>
+          <li>Customers can still place orders normally</li>
+        </ul>
+      </div>
+    )}
+  </CardContent>
+</Card>
+
 
                 {/* Current Schedule Summary */}
                 <Card>
@@ -853,12 +932,6 @@ export function SupermarketSettingsModal({
                         </span>
                       </div>
                       <div>
-                        <span className="font-medium">Timezone:</span>
-                        <span className="ml-2 text-gray-600">
-                          {supermarketTimeZone.replace("_", " ")}
-                        </span>
-                      </div>
-                      <div>
                         <span className="font-medium">Holiday Mode:</span>
                         <span
                           className={`ml-2 ${
@@ -870,7 +943,38 @@ export function SupermarketSettingsModal({
                           {formData.holidayMode ? "Active" : "Inactive"}
                         </span>
                       </div>
+                      <div>
+                        <span className="font-medium">Dropshipping Mode:</span>
+                        <span
+                          className={`ml-2 ${
+                            formData.dropshippingMode
+                              ? "text-blue-600"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {formData.dropshippingMode ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Timezone:</span>
+                        <span className="ml-2 text-gray-600">
+                          {supermarketTimeZone.replace("_", " ")}
+                        </span>
+                      </div>
                     </div>
+                    
+                    {/* Additional info when dropshipping mode is active */}
+                    {formData.dropshippingMode && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Truck className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium text-blue-800">Dropshipping Active</span>
+                        </div>
+                        <p className="text-sm text-blue-700">
+                          Order notifications are disabled for riders. All delivery management is your responsibility.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
