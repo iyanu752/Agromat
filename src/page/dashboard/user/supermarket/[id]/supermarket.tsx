@@ -79,8 +79,6 @@ interface Supermarket {
   const cartLength = cartItems.length
   const [userId, setUserId] = useState<string | null>(null)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-
-  // Check if user is logged in
   const isLoggedIn = userId !== null;
 
 const filteredItems = useMemo(() => {
